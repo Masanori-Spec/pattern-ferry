@@ -3,3 +3,7 @@ __pycache__/
 .native/
 ci-home/
 evidence/
+
+node_modules/
+
+.playwright-browsers/

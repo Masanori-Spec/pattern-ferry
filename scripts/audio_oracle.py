@@ -4,16 +4,14 @@ import json
 import subprocess
 import wave
 import numpy as np
-from pattern_ferry.core import Clip,Note,midi_write
 
 E=Path('evidence')
 SF=Path('/usr/share/sounds/sf2/TimGM6mb.sf2')
 assert SF.is_file(), 'Official distro TimGM6mb SoundFont missing'
-RESULT={'engine':subprocess.check_output(['fluidsynth','--version'],text=True).splitlines()[0], 'scope':'MIDI rendering only; not LMMS audio equivalence','soundfont':str(SF),'cases':{}}
+RESULT={'engine':subprocess.check_output(['fluidsynth','--version'],text=True).splitlines()[0], 'scope':'Actual browser MIDI rendering only; not LMMS audio equivalence','soundfont':str(SF),'cases':{}}
 
-def render(name,notes):
-    midi,_=midi_write(Clip(notes,288),accept_velocity_scaling=True)
-    (E/f'{name}.mid').write_bytes(midi)
+def render(name):
+    assert (E/f'{name}.mid').is_file(), 'Actual browser MIDI download required'
     subprocess.run(['fluidsynth','-ni','-g','0.8','-R','0','-C','0','-r','22050','-F',str(E/f'{name}.wav'),str(SF),str(E/f'{name}.mid')],check=True)
     with wave.open(str(E/f'{name}.wav')) as w:
         assert w.getsampwidth()==2
@@ -62,9 +60,9 @@ def inspect(sr,samples):
     assert all(abs(x-1)<.03 for x in intervals), f'Onset interval mismatch {intervals}'
     return {'notes':details,'onset_intervals_seconds':intervals}
 
-cases={'positive':[Note(0,69,24,160),Note(96,72,24,160),Note(192,76,24,160)],'missing-note':[Note(0,69,24,160),Note(192,76,24,160)],'shifted-note':[Note(0,69,24,160),Note(120,72,24,160),Note(192,76,24,160)]}
-for name,notes in cases.items():
-    sr,samples=render(name,notes)
+cases=['positive','missing-note','shifted-note']
+for name in cases:
+    sr,samples=render(name)
     try:
         details=inspect(sr,samples)
     except AssertionError as exc:

@@ -59,6 +59,30 @@ assert notes(rt.find('midiclip'))==sorted(expected['imported_xpt'])
 assert canonical(rt)==canonical(at), 'Native reopen changed destination track/clip/instrument'
 assert canonical(reopened.find('head'))==canonical(after.find('head')), 'Native reopen changed project header'
 
+# A second browser download explicitly rounds 1/100-quarter timing to 48 PPQN.
+quant=ET.parse(E/'target-quantized.mmp').getroot()
+qr=ET.parse(E/'target-quantized-reopened.mmp').getroot()
+qt=quant.find('./song/trackcontainer/track')
+qrt=qr.find('./song/trackcontainer/track')
+assert notes(qt.find('midiclip'))==[[0,60,12,157]]
+assert qt.find('midiclip').get('len')=='12'
+assert qt.find('midiclip').get('pos')=='192'
+assert quant.find('head').get('bpm')=='137'
+assert canonical(qt.find('instrumenttrack'))==canonical(bt.find('instrumenttrack'))
+assert canonical(qt)==canonical(qrt)
+assert canonical(quant.find('head'))==canonical(qr.find('head'))
+review=json.loads((E/'quantized-review.json').read_text())
+assert review['acknowledged'] is True and review['rounding']=='nearest'
+assert review['rows'][0]['sourceStart']=='12/25'
+assert review['rows'][0]['startError']=='-12/25'
+assert review['rows'][0]['velocityError']=='-61/127'
+for name in ['export-review.json','import-review.json']:
+    assert json.loads((E/name).read_text())['acknowledged'] is True
+browser=json.loads((E/'browser-download-result.json').read_text())
+assert browser['status']=='pass' and browser['producer']=='actual offline browser UI downloads'
+for name,sha in browser['files'].items():
+    assert hashlib.sha256((E/name).read_bytes()).hexdigest()==sha
+
 # Strong negative controls prove the same assertions detect missing/shifted notes.
 from copy import deepcopy
 bad=deepcopy(at.find('midiclip'))
@@ -67,6 +91,6 @@ assert notes(bad)!=sorted(expected['imported_xpt'])
 bad=deepcopy(at.find('midiclip'))
 bad.findall('note')[0].set('pos','1')
 assert notes(bad)!=sorted(expected['imported_xpt'])
-result={'status':'pass','lmms':'1.3.0-alpha.2','native_export_import':True,'mido_handwritten_oracle':True,'preserved':['destination tempo','entire instrument state','track settings','destination clip timeline position'],'negative_controls':['missing note','shifted note'],'audio_equivalence':False,'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in [E/'native-export.xpt',E/'converted.mid',E/'generated.xpt',E/'target-before.mmp',E/'target-after.mmp',E/'target-reopened.mmp']}}
+result={'status':'pass','lmms':'1.3.0-alpha.2','native_export_import':True,'producer':'actual offline browser UI downloads','reviewed_quantized_gui_import':True,'mido_handwritten_oracle':True,'preserved':['destination tempo','entire instrument state','track settings','destination clip timeline position'],'negative_controls':['missing note','shifted note'],'audio_equivalence':False,'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in [E/'native-export.xpt',E/'converted.mid',E/'generated.xpt',E/'target-before.mmp',E/'target-after.mmp',E/'target-reopened.mmp',E/'quantized.xpt',E/'target-quantized.mmp',E/'target-quantized-reopened.mmp']}}
 (E/'native-oracle-result.json').write_text(json.dumps(result,indent=2)+'\n')
 print(json.dumps(result,indent=2))

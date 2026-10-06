@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE lmms-project>
+<lmms-project creator="LMMS" creatorplatform="linux" creatorversion="1.3.0-alpha.2" version="31" creatorplatformtype="ubuntu" type="midiclip">
+  <head/>
+  <midiclip muted="0" pos="0" steps="16" name="SOURCE" autoresize="0" off="0" type="1" len="384">
+    <note pos="0" pan="0" key="60" vol="200" type="0" len="48"/>
+    <note pos="0" pan="0" key="64" vol="100" type="0" len="48"/>
+    <note pos="0" pan="0" key="67" vol="50" type="0" len="48"/>
+    <note pos="96" pan="0" key="60" vol="75" type="0" len="24"/>
+    <note pos="120" pan="0" key="60" vol="125" type="0" len="24"/>
+    <note pos="192" pan="0" key="69" vol="150" type="0" len="48"/>
+  </midiclip>
+</lmms-project>

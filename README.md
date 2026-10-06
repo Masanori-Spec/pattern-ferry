@@ -1,23 +1,31 @@
 # PatternFerry: native-first feasibility
 
-**Experimental feasibility study for LMMS 1.3.0-alpha.2. The official native GUI gate passed on October 6, 2026. This is a source-only prototype, not a finished user-facing application.**
+**Experimental offline UI candidate for LMMS 1.3.0-alpha.2. The independent Python prototype passed its native gate on October 6, 2026. The new browser UI has not yet passed its own hosted/native acceptance run.**
 
 [Verified run](https://github.com/Masanori-Spec/pattern-ferry/actions/runs/37427268358) · [Evidence and exact scope](docs/VERIFICATION.md)
+
+A dependency-free Japanese/English offline note-clip bridge between LMMS XPT and standard MIDI. Extract `pattern-ferry-offline.zip` and open `index.html` directly; no server, account, upload or network access is needed.
+
+The browser preview lists every note's exact converted start/end, signed timing error, source/destination velocity and signed velocity-rounding error. Nonintegral timing is blocked by default. Selecting nearest-tick rounding resets acknowledgment. Export requires a fresh explicit acknowledgment of all displayed changes. JSON and print reports retain the review evidence.
+
+The original Python converter remains an independent comparison implementation. The JavaScript implementation has its own bounded XML/MIDI parser, with no shared conversion code or runtime dependencies.
 
 A narrow note-clip bridge between LMMS XPT and standard MIDI. The goal is moving a musical phrase into an existing instrument clip without replacing its instrument or changing project tempo. LMMS already supports whole-project MIDI import/export; this study tests whether a smaller, clearly reviewed clip workflow is useful and technically reliable.
 
 ## Acceptance gate
 
-The `Native XPT feasibility (experimental)` workflow requires all of the following. These passed on commit `4e988e514a6fb2d54894f950cba8673009ef93c1`:
+The `Browser and native XPT gate (experimental)` workflow requires all of the following. The original Python producer passed on commit `4e988e514a6fb2d54894f950cba8673009ef93c1`; the browser producer must pass again using its actual UI downloads:
 
 1. Download the official, SHA-256-pinned LMMS alpha.2 AppImage
 2. Open an original project fixture with a chord, rests, an adjacent same-pitch retrigger and different note volumes
 3. Use the official Piano Roll **Export clip** dialog to write `native-export.xpt`
-4. Convert that actual export to MIDI and then to a generated XPT
+4. Load that actual export in the offline browser UI, acknowledge the full review, and save actual browser MIDI/XPT downloads; independently compare them with Python
 5. Use the official **Import clip** dialog to load the generated file into an existing empty instrument clip, at a nonzero timeline position
 6. Save the resulting project, load a different project, reopen the result with its native window title checked, and save a separate reopened copy
 7. Independently compare native XML against literal expected notes; compare the destination instrument's entire saved subtree, tempo, track settings, and clip position
-8. Decode MIDI with Mido against hand-written note/tick expectations; render diagnostic MIDI using distro FluidSynth and check known pitches/onset intervals with missing-note and shifted-note negative controls
+8. Decode browser MIDI with Mido against hand-written note/tick expectations; render browser-downloaded diagnostic MIDI using distro FluidSynth and check known pitches/onset intervals with missing-note and shifted-note negative controls
+9. Natively import/save/reopen a separately acknowledged browser-quantized XPT against literal timing and velocity expectations
+10. Check Japanese/English desktop/mobile, keyboard access, offline file use, stale asynchronous loads, repeated/canceled input, rejection/size boundaries and print output
 
 Embedding a generated clip into a project file is **not** an alternative way to pass this gate. The only script that creates a project fixture runs before LMMS opens it. Only the native GUI may write the post-import project and native XPT export. The independent oracle imports no converter code.
 
@@ -42,18 +50,27 @@ Rejected: step notes/clips, per-note panning, detune/automation, controllers, pr
 
 ## Local source checks
 
-Python 3.12 standard library is enough for the prototype and unit tests:
+Python 3.12 and Node.js run the independent unit suites without installing browser binaries:
 
 ```sh
 python -m unittest discover -s tests -v
+node --test tests/test_browser_core.cjs
+python scripts/build_offline.py
 python -m pattern_ferry phrase.xpt phrase.mid --report export-review.json --accept-velocity-scaling
 python -m pattern_ferry phrase.mid phrase.xpt --report import-review.json --accept-velocity-scaling
 ```
 
-First add `--preview` to write only the proposed value/error report, without creating a conversion output. For nonintegral timing the preview includes exact quantization errors. Then use a new report filename with `--accept-velocity-scaling` and, only if needed and reviewed, `--quantize-nearest-tick` to produce the output. Outputs and reports refuse to overwrite existing files. This is a feasibility CLI, not a finished user interface. Native GUI and rendering checks run only on the hosted standard Ubuntu runner; local unit success does not establish native interoperability.
+First add `--preview` to write only the proposed value/error report, without creating a conversion output. For nonintegral timing the preview includes exact quantization errors. Then use a new report filename with `--accept-velocity-scaling` and, only if needed and reviewed, `--quantize-nearest-tick` to produce the output. Outputs and reports refuse to overwrite existing files. The CLI remains available independently of the new browser interface. Native GUI and rendering checks run only on the hosted standard Ubuntu runner; local unit success does not establish native interoperability.
 
 ## Evidence and distribution
 
 The hosted workflow uploads screenshots, accessibility trees, native-exported XPT, generated MIDI/XPT, native before/after projects, independent oracle reports, and rendering evidence. Failed native UI operations leave evidence and fail the job; they never silently skip or switch to project-file injection.
 
 This repository is source-only. It includes no LMMS binaries, SoundFont, proprietary files, copied LMMS implementation, or original-code license grant. The official release and distro packages are fetched at test time for testing, not redistributed. Third-party materials retain their own licenses. See [primary sources](docs/SOURCES.md) and [test design](docs/TEST-DESIGN.md).
+
+## Browser candidate verification status
+
+- Passed locally: 25 independent Python tests, 62 JavaScript tests, syntax checks, deterministic offline package validation, and the native fixture's byte-exact JS/Python MIDI comparison
+- Pending: hosted browser scenarios, actual browser-download official LMMS GUI import/save/reopen (normal and quantized), independent Mido/XML/FluidSynth checks and screenshot/print review
+- Browser test dependency: pinned Playwright 1.63.0, development/CI only; no third-party JavaScript, browser binary, font or SoundFont is bundled in the offline ZIP
+- See [browser acceptance design](docs/BROWSER-ACCEPTANCE.md)

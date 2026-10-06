@@ -246,7 +246,7 @@ def file_action(action):
     wait_dialog('Export clip' if action=='Export clip' else 'Open clip')
 
 try:
-    for name in ['native-export.xpt','converted.mid','generated.xpt','source-native.mmp','target-before.mmp','target-after.mmp','target-reopened.mmp','native-gui-result.json','native-oracle-result.json']:
+    for name in ['native-export.xpt','converted.mid','generated.xpt','source-native.mmp','target-before.mmp','target-after.mmp','target-reopened.mmp','target-quantized.mmp','target-quantized-reopened.mmp','native-gui-result.json','native-oracle-result.json']:
         assert not (E/name).exists(), f'Stale evidence exists: {name}'
     time.sleep(7)
     active_project(E/'source-input.mmp',timeout=60)
@@ -261,9 +261,9 @@ try:
     # Opening/maximizing a clip can mark the source project modified. Save a
     # fresh native copy so switching projects cannot stop at an unsaved dialog.
     save_project_as(E/'source-native.mmp')
-    # Python core is run separately; source is an actual native GUI output.
-    command(sys.executable,'-m','pattern_ferry',str(E/'native-export.xpt'),str(E/'converted.mid'),'--report',str(E/'export-review.json'),'--accept-velocity-scaling')
-    command(sys.executable,'-m','pattern_ferry',str(E/'converted.mid'),str(E/'generated.xpt'),'--report',str(E/'import-review.json'),'--accept-velocity-scaling')
+    # Only actual browser UI downloads feed the production native gate.
+    command('node','scripts/browser_convert.mjs')
+    command(sys.executable,'scripts/verify_browser_parity.py')
     open_project(E/'target-input.mmp')
     record('05-target-existing-project')
     # Save a fresh native-normalized baseline, never reuse the input fixture.
@@ -284,6 +284,18 @@ try:
     record('12-reopened-after')
     save_project_as(E/'target-reopened.mmp')
     record('13-reopened-project-saved')
+    # The explicitly reviewed browser rounding path is exercised natively too.
+    open_project(E/'target-input.mmp')
+    clip('TARGET')
+    file_action('Import clip')
+    record('14-quantized-import-dialog')
+    filename(E/'quantized.xpt')
+    record('15-quantized-browser-import')
+    save_project_as(E/'target-quantized.mmp')
+    open_project(E/'source-input.mmp')
+    open_project(E/'target-quantized.mmp')
+    save_project_as(E/'target-quantized-reopened.mmp')
+    record('16-quantized-reopened-saved')
     (E/'native-gui-result.json').write_text(json.dumps({'status':'gui-complete-awaiting-independent-oracle','lmms':'1.3.0-alpha.2','route':'Piano Roll File actions > Export clip / Import clip','steps':STEPS},indent=2)+'\n')
 except Exception:
     traceback.print_exc()
