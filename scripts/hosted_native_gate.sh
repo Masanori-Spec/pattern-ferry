@@ -11,14 +11,14 @@ cat > "$HOME/.lmmsrc.xml" <<EOF
 <?xml version="1.0"?>
 <lmms version="1.3.0-alpha.2" configversion="3">
  <paths workingdir="$PWD/ci-home/work/"/>
- <audioengine audiodev="Dummy (no sound output)" mididev="Dummy"/>
- <app nommpz="1"/>
- <ui language="en" compacttrackbuttons="0"/>
+ <audioengine audiodev="Dummy (no sound output)" mididev="Dummy (no MIDI support)"/>
+ <app nommpz="1" configured="1" language="en"/>
+ <ui compacttrackbuttons="0"/>
 </lmms>
 EOF
 openbox >evidence/openbox.log 2>&1 &
 WM_PID=$!
-"$PWD/.native/squashfs-root/AppRun" --geometry 1440x1000+0+0 "$PWD/evidence/source-input.mmp" >evidence/lmms.log 2>&1 &
+"$PWD/.native/squashfs-root/AppRun" --config "$HOME/.lmmsrc.xml" --geometry 1440x1000+0+0 "$PWD/evidence/source-input.mmp" >evidence/lmms.log 2>&1 &
 APP_PID=$!
 trap 'kill "$APP_PID" "$WM_PID" 2>/dev/null || true' EXIT
 /usr/bin/python3 scripts/native_gate.py
