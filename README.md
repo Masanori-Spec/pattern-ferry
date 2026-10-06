@@ -1,12 +1,14 @@
 # PatternFerry: native-first feasibility
 
-**Experimental feasibility study for LMMS 1.3.0-alpha.2. Not a released application. The hosted native GUI gate has not yet passed.**
+**Experimental feasibility study for LMMS 1.3.0-alpha.2. The official native GUI gate passed on October 6, 2026. This is a source-only prototype, not a finished user-facing application.**
+
+[Verified run](https://github.com/Masanori-Spec/pattern-ferry/actions/runs/37427268358) · [Evidence and exact scope](docs/VERIFICATION.md)
 
 A narrow note-clip bridge between LMMS XPT and standard MIDI. The goal is moving a musical phrase into an existing instrument clip without replacing its instrument or changing project tempo. LMMS already supports whole-project MIDI import/export; this study tests whether a smaller, clearly reviewed clip workflow is useful and technically reliable.
 
 ## Acceptance gate
 
-The `Native XPT feasibility (experimental)` workflow must:
+The `Native XPT feasibility (experimental)` workflow requires all of the following. These passed on commit `4e988e514a6fb2d54894f950cba8673009ef93c1`:
 
 1. Download the official, SHA-256-pinned LMMS alpha.2 AppImage
 2. Open an original project fixture with a chord, rests, an adjacent same-pitch retrigger and different note volumes
@@ -34,7 +36,7 @@ LMMS volume 0–200 and MIDI velocity 0–127 are different scales. Conversion u
 
 Nonintegral 48-PPQN timestamps are rejected by default. An explicit nearest-tick quantization flag is needed; the report contains exact rational timestamps and signed rounding errors. Collapsed or overlapping notes after quantization remain errors. Clip name/color and source song position are not represented in MIDI. Their source values and the return defaults (including fixed-length autoresize=0 and 16-step editor context) are disclosed in the report. Other step-context values are rejected.
 
-Rejected: step notes/clips, per-note panning, detune/automation, controllers, program changes, pressure, pitch bend, SysEx, SMPTE timing, multiple note channels/tracks, same-pitch overlap, tempo changes, unsupported metadata/fields, nonzero release velocity, trimmed clips, malformed files, non-UTF-8/DTD/entity/PI/text-bearing XML, and oversized inputs. XPTZ and project-file editing are outside scope.
+Rejected: step notes/clips, per-note panning, detune/automation, controllers, program changes, pressure, pitch bend, SysEx, SMPTE timing, multiple note channels/tracks, same-pitch overlap, tempo changes, unsupported metadata/fields, nonzero release velocity, trimmed clips, malformed files, non-UTF-8 XML, external/internal DTD subsets, entities, processing instructions, text-bearing XML, and oversized inputs. XPTZ and project-file editing are outside scope.
 
 **No audio-equivalence promise.** FluidSynth validates MIDI playback evidence only. It cannot prove that LMMS instruments, effects or automation sound identical.
 

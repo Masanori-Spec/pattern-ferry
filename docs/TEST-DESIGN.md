@@ -34,6 +34,8 @@ A failed menu lookup is an automation failure, not proof that LMMS lacks the fea
 
 The rendered diagnostics are monophonic to keep the acoustic oracle interpretable. Chords and retriggers are covered by the native XML and Mido layers. Audio checks never assert equivalence to an LMMS instrument.
 
-## Status before hosted execution
+## Verified hosted outcome
 
-Only unit tests and source inspection can pass locally. Native GUI, Mido hosted oracle, and FluidSynth rendering are pending until evidence from the exact published commit exists. No pass marker is pre-populated in the repository.
+The full gate passed on 2026-10-06 at commit `4e988e514a6fb2d54894f950cba8673009ef93c1` in [run 37427268358](https://github.com/Masanori-Spec/pattern-ferry/actions/runs/37427268358). The official GUI exported the fixture, imported the actual generated XPT into the existing clip, and saved/reopened it. Independent XML and MIDI checks passed. The post-import and reopened project files are byte-identical. FluidSynth positive rendering passed, and both missing-note and shifted-note renders failed the expected-note checks.
+
+This establishes the documented Python prototype's alpha.2 note-only feasibility. It does not establish stable LMMS support, a finished UI, or equivalence of LMMS instrument audio. Any different producer, including a future browser converter, must rerun the same native gate on its own actual output. See [the verification record](VERIFICATION.md).
