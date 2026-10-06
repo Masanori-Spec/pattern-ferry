@@ -54,3 +54,7 @@ The post-import and reopened project files are **byte-identical**. No generated 
 This proves the documented source-only Python prototype's note exchange path for the pinned experimental release. It does not prove stable 1.2.2 support, broader MIDI feature support, lossless velocity conversion, a finished product UI, or LMMS instrument audio equivalence. Nonintegral timing still needs explicit quantization review. Every rejected-feature boundary in the README remains in force.
 
 A future UI or replacement converter must pass the same native test using its actual exported files. This successful Python prototype test must not be used as a substitute for testing that different producer.
+
+## Subsequent browser result
+
+The separate offline browser producer has now passed the same native route on its own actual UI downloads, with an additional explicit-quantization case. Its exact run, hashes and evidence are recorded in [BROWSER-VERIFICATION.md](BROWSER-VERIFICATION.md). This original Python record remains unchanged as historical proof.

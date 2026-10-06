@@ -1,6 +1,6 @@
 # Browser producer acceptance
 
-The original Python native proof is preserved in VERIFICATION.md. It does not establish the new browser producer's correctness. Until a fresh exact-commit hosted run and independent artifact review pass, this is an experimental UI candidate.
+The packaged offline browser producer passed a fresh exact-commit native gate on 2026-10-06. See [the browser verification record](BROWSER-VERIFICATION.md) for the run, output hashes and limits. The original Python proof is preserved in VERIFICATION.md as a separate earlier result; it is not used as a substitute for browser-output evidence.
 
 ## Actual outputs, not a simulated producer
 

@@ -21,7 +21,7 @@ Clip duration is 384 ticks. Expected MIDI velocities are 127, 64, 32, 48, 79, 95
 
 ## Hosted UI method
 
-Use a standard GitHub-hosted Ubuntu runner, Xvfb and a normal D-Bus accessibility session. Use AT-SPI for named menus/dialogs. For LMMS's custom-painted clip label, use screenshot OCR with a unique exact label. Save every screen and accessibility tree. An ambiguous label or absent GUI affordance fails the gate. No patched LMMS, injected test plugin, hidden data mutation, root GUI process, security-setting change, or local heavy GUI installation is used.
+Use a standard GitHub-hosted Ubuntu runner, Xvfb and a normal D-Bus accessibility session. Use AT-SPI for named menus/dialogs. For LMMS's custom-painted clip label, use screenshot OCR with a unique exact label. For the pinned Qt popup that is absent from accessibility and unreadable to OCR, standard Down-key navigation selects the source-verified Import/Export order; a selected-item screenshot and the exact native dialog title are still required. Save every screen and accessibility tree. An ambiguous label or absent GUI affordance fails the gate. No patched LMMS, injected test plugin, hidden data mutation, root GUI process, security-setting change, or local heavy GUI installation is used.
 
 A failed menu lookup is an automation failure, not proof that LMMS lacks the feature. It is investigated from retained evidence; acceptance never changes to XML embedding. If the official GUI path cannot be demonstrated within supported hosted tooling, this concept remains no-go and no product UI is started.
 
@@ -39,3 +39,5 @@ The rendered diagnostics are monophonic to keep the acoustic oracle interpretabl
 The full gate passed on 2026-10-06 at commit `4e988e514a6fb2d54894f950cba8673009ef93c1` in [run 37427268358](https://github.com/Masanori-Spec/pattern-ferry/actions/runs/37427268358). The official GUI exported the fixture, imported the actual generated XPT into the existing clip, and saved/reopened it. Independent XML and MIDI checks passed. The post-import and reopened project files are byte-identical. FluidSynth positive rendering passed, and both missing-note and shifted-note renders failed the expected-note checks.
 
 This establishes the documented Python prototype's alpha.2 note-only feasibility. It does not establish stable LMMS support, a finished UI, or equivalence of LMMS instrument audio. Any different producer, including a future browser converter, must rerun the same native gate on its own actual output. See [the verification record](VERIFICATION.md).
+
+The packaged browser producer subsequently passed its own complete gate at `d81b0e2c46d251487194e32b8c77841ee4032b1b`, including real file downloads, native normal and quantized import/save/reopen, and browser-produced audio diagnostics. See [the browser-specific verification record](BROWSER-VERIFICATION.md).
