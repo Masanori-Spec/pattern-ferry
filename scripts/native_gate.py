@@ -206,7 +206,9 @@ def click_ocr_phrase(label,screenshot):
                 right=max(int(w['left'])+int(w['width']) for w in selected)
                 bottom=max(int(w['top'])+int(w['height']) for w in selected)
                 hits.append(((left+right)//2,(top+bottom)//2))
-    assert len(hits)==1, f'Expected one visible OCR phrase {label!r}; found {len(hits)}'
+    if not hits:
+        raise LookupError(f'No OCR phrase recognized: {label!r}')
+    assert len(hits)==1, f'Ambiguous visible OCR phrase {label!r}; found {len(hits)}'
     x,y=hits[0]
     command('xdotool','mousemove',str(x),str(y),'click','1')
     time.sleep(.3)
@@ -240,7 +242,18 @@ def file_action(action):
     except RuntimeError:
         # Qt's transient menu is visually present but absent from AT-SPI on
         # the pinned official build (recorded in R4). Click its unique OCR text.
-        click_ocr_phrase(action,E/(stem+'.png'))
+        try:
+            click_ocr_phrase(action,E/(stem+'.png'))
+        except LookupError:
+            # The pinned official PianoRoll.cpp adds Import first, Export second.
+            # Standard QMenu keyboard navigation still invokes the real UI.
+            # The exact native dialog and every file/oracle check remain required.
+            assert action in ('Import clip','Export clip')
+            keys('Home')
+            if action=='Export clip':
+                keys('Down')
+            keys('Return')
+            record('keyboard-'+stem)
     else:
         click_node(item)
     wait_dialog('Export clip' if action=='Export clip' else 'Open clip')
