@@ -98,7 +98,7 @@ def active_project(path,timeout=15):
             # Keep waiting within the same bounded deadline; never count as success.
             time.sleep(.2)
             continue
-        if title.startswith(path.stem+' - LMMS'):
+        if title.startswith((path.stem+' - LMMS 1.3.0-alpha.2',path.stem+'* - LMMS 1.3.0-alpha.2')):
             return title
         time.sleep(.2)
     raise RuntimeError(f'Expected active native project {path.stem!r}; actual title {title!r}')
@@ -112,6 +112,18 @@ def save_project_as(path):
 
 def open_project(path):
     keys('ctrl+o')
+    deadline=time.monotonic()+15
+    while time.monotonic()<deadline:
+        title=command('xdotool','getactivewindow','getwindowname').strip()
+        if title=='Project not saved':
+            # Only original synthetic CI fixtures are open in this profile.
+            # Save through the native warning instead of discarding changes.
+            record('native-save-changes-warning')
+            click_node(find('Save','push button'))
+        elif title=='Open Project':
+            break
+        time.sleep(.2)
+    wait_dialog('Open Project')
     find('Open',timeout=10)  # File dialog accept button
     filename(path)
     active_project(path)
