@@ -20,6 +20,10 @@ openbox >evidence/openbox.log 2>&1 &
 WM_PID=$!
 "$PWD/.native/squashfs-root/AppRun" --config "$HOME/.lmmsrc.xml" --geometry 1440x1000+0+0 "$PWD/evidence/source-input.mmp" >evidence/lmms.log 2>&1 &
 APP_PID=$!
-trap 'kill "$APP_PID" "$WM_PID" 2>/dev/null || true' EXIT
+cleanup() {
+  ps -p "$APP_PID" -o pid,ppid,stat,etime,args > evidence/lmms-process-at-exit.txt || true
+  kill "$APP_PID" "$WM_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
 /usr/bin/python3 scripts/native_gate.py
 /usr/bin/python3 scripts/oracle.py

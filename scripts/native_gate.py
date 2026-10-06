@@ -89,8 +89,15 @@ def filename(path):
 
 def active_project(path,timeout=15):
     deadline=time.monotonic()+timeout
+    title='<no active window>'
     while time.monotonic()<deadline:
-        title=command('xdotool','getactivewindow','getwindowname').strip()
+        try:
+            title=command('xdotool','getactivewindow','getwindowname').strip()
+        except subprocess.CalledProcessError:
+            # The application/window manager may not yet own an active window.
+            # Keep waiting within the same bounded deadline; never count as success.
+            time.sleep(.2)
+            continue
         if title.startswith(path.stem+' - LMMS'):
             return title
         time.sleep(.2)
@@ -184,7 +191,7 @@ try:
     for name in ['native-export.xpt','converted.mid','generated.xpt','target-before.mmp','target-after.mmp','target-reopened.mmp','native-gui-result.json','native-oracle-result.json']:
         assert not (E/name).exists(), f'Stale evidence exists: {name}'
     time.sleep(7)
-    active_project(E/'source-input.mmp')
+    active_project(E/'source-input.mmp',timeout=60)
     record('01-native-start')
     clip('SOURCE')
     record('02-source-piano-roll')
