@@ -249,9 +249,12 @@ def file_action(action):
             # Standard QMenu keyboard navigation still invokes the real UI.
             # The exact native dialog and every file/oracle check remain required.
             assert action in ('Import clip','Export clip')
-            keys('Home')
+            # A freshly mouse-opened popup has no selected item. Qt on the
+            # Ubuntu 22 runner ignores Home; Down selects its first action.
+            keys('Down')
             if action=='Export clip':
                 keys('Down')
+            record('selected-'+stem)
             keys('Return')
             record('keyboard-'+stem)
     else:
