@@ -33,7 +33,7 @@ def record(name):
                 actions=[action.getName(i) for i in range(action.nActions)]
             except Exception:
                 actions=[]
-            dump.append({'name':node.name,'role':node.getRoleName(),'bounds':[ext.x,ext.y,ext.width,ext.height],'actions':actions})
+            dump.append({'name':node.name,'description':node.description,'role':node.getRoleName(),'bounds':[ext.x,ext.y,ext.width,ext.height],'actions':actions})
         except Exception:
             pass
     (E/(name+'-accessibility.json')).write_text(json.dumps(dump,indent=2))
@@ -109,15 +109,53 @@ def open_project(path):
     filename(path)
     active_project(path)
 
+def show_song_editor():
+    # Ctrl+1 brings a background editor forward or hides the active one.
+    # If it hid it, a second press restores it. This uses the official shortcut.
+    keys('ctrl+1')
+    try:
+        editor=find('Song-Editor','frame',timeout=1)
+    except RuntimeError:
+        keys('ctrl+1')
+        editor=find('Song-Editor','frame')
+    ext=editor.queryComponent().getExtents(pyatspi.DESKTOP_COORDS)
+    if ext.width<900:
+        # R2 screenshot/AT-SPI identify the 24px native subwindow title bar.
+        # Double-click that title to maximize, then verify the result.
+        command('xdotool','mousemove',str(ext.x+ext.width//2),str(ext.y+12),'click','--repeat','2','--delay','120','1')
+        time.sleep(.5)
+        ext=find('Song-Editor','frame').queryComponent().getExtents(pyatspi.DESKTOP_COORDS)
+    assert ext.width>=900, 'Song Editor did not maximize; clip lane remains hidden'
+    record('visible-song-editor')
+    return editor,ext
+
 def clip(label):
+    editor,editor_bounds=show_song_editor()
+    matches=[]
+    for n in walk(editor):
+        try:
+            if (n.name==label or n.description==label) and n.getState().contains(pyatspi.STATE_SHOWING):
+                ext=n.queryComponent().getExtents(pyatspi.DESKTOP_COORDS)
+                if ext.width>0 and ext.height>0 and ext.x>=editor_bounds.x and ext.x+ext.width<=editor_bounds.x+editor_bounds.width:
+                    matches.append((n,ext))
+        except Exception:
+            pass
+    if len(matches)==1:
+        ext=matches[0][1]
+        command('xdotool','mousemove',str(ext.x+ext.width//2),str(ext.y+ext.height//2),'click','--repeat','2','--delay','120','1')
+        time.sleep(.7)
+        return
+    assert len(matches)==0, f'Ambiguous accessible clip label: {label}'
     # Native clip text is custom-painted and may have no AT-SPI node. OCR is
     # a read of the hosted screenshot; no coordinate is guessed silently.
     for attempt in range(5):
         shot=E/f'locate-{label}-{attempt}.png'
         command('scrot',str(shot))
-        result=command('tesseract',str(shot),'stdout','--psm','11','tsv')
+        ocr=subprocess.run(['tesseract',str(shot),'stdout','--psm','11','tsv'],capture_output=True,text=True,check=True)
+        result=ocr.stdout
+        (E/f'locate-{label}-{attempt}-stderr.txt').write_text(ocr.stderr)
         (E/f'locate-{label}-{attempt}.tsv').write_text(result)
-        hits=[row for row in csv.DictReader(io.StringIO(result),delimiter='\t') if row.get('text','').strip().upper()==label]
+        hits=[row for row in csv.DictReader(io.StringIO(result),delimiter='\t') if (row.get('text') or '').strip().upper()==label]
         if len(hits)==1:
             h=hits[0]
             x=int(h['left'])+int(h['width'])//2
