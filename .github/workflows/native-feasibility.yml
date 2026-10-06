@@ -1,4 +1,4 @@
-name: Native XPT feasibility (experimental)
+name: Browser and native XPT gate (experimental)
 on:
   push:
   workflow_dispatch:
@@ -9,18 +9,30 @@ concurrency:
   cancel-in-progress: false
 jobs:
   native-xpt-gate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 15
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.playwright-browsers
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Install official distro test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xvfb xauth dbus-x11 at-spi2-core python3-pyatspi python3-numpy python3-mido xdotool scrot tesseract-ocr openbox libasound2t64 libjack-jackd2-0 libxcb-cursor0 fluidsynth timgm6mb-soundfont
+          sudo apt-get install -y --no-install-recommends xvfb xauth dbus-x11 at-spi2-core python3-pyatspi python3-numpy python3-mido xdotool scrot tesseract-ocr openbox libasound2 libjack-jackd2-0 libxcb-cursor0 fluidsynth timgm6mb-soundfont fonts-noto-cjk
+      - name: Install pinned browser test tools
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
       - name: Unit checks and original fixtures
         run: |
           /usr/bin/python3 -m unittest discover -s tests -v
+          node --test tests/test_browser_core.cjs
+          /usr/bin/python3 scripts/build_offline.py
+          git diff --exit-code -- pattern-ferry-offline.zip offline-manifest.json
+          /usr/bin/python3 scripts/verify_offline.py
           /usr/bin/python3 scripts/prepare_fixtures.py
+      - name: Offline UI, keyboard, races, bounds and print evidence
+        run: node scripts/browser_test.mjs
       - name: Fetch and verify pinned official LMMS alpha release
         run: |
           mkdir -p .native evidence
