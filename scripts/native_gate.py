@@ -173,6 +173,43 @@ def clip(label):
         time.sleep(.5)
     raise RuntimeError(f'Cannot uniquely locate rendered {label} clip. Native gate stays unproven.')
 
+def click_ocr_phrase(label,screenshot):
+    result=subprocess.run(['tesseract',str(screenshot),'stdout','--psm','11','tsv'],capture_output=True,text=True,check=True)
+    screenshot.with_suffix('.tsv').write_text(result.stdout)
+    screenshot.with_suffix('.ocr-stderr.txt').write_text(result.stderr)
+    lines={}
+    for row in csv.DictReader(io.StringIO(result.stdout),delimiter='\t'):
+        if row.get('level')!='5' or not (row.get('text') or '').strip():
+            continue
+        line=tuple(row.get(k) for k in ('page_num','block_num','par_num','line_num'))
+        lines.setdefault(line,[]).append(row)
+    target=label.lower().split()
+    hits=[]
+    for words in lines.values():
+        for i in range(len(words)-len(target)+1):
+            selected=words[i:i+len(target)]
+            if [w['text'].strip().lower() for w in selected]==target:
+                left=min(int(w['left']) for w in selected)
+                top=min(int(w['top']) for w in selected)
+                right=max(int(w['left'])+int(w['width']) for w in selected)
+                bottom=max(int(w['top'])+int(w['height']) for w in selected)
+                hits.append(((left+right)//2,(top+bottom)//2))
+    assert len(hits)==1, f'Expected one visible OCR phrase {label!r}; found {len(hits)}'
+    x,y=hits[0]
+    command('xdotool','mousemove',str(x),str(y),'click','1')
+    time.sleep(.3)
+
+def wait_dialog(title,timeout=15):
+    deadline=time.monotonic()+timeout
+    while time.monotonic()<deadline:
+        try:
+            if command('xdotool','getactivewindow','getwindowname').strip()==title:
+                return
+        except subprocess.CalledProcessError:
+            pass
+        time.sleep(.2)
+    raise RuntimeError(f'Expected native dialog {title!r}')
+
 def file_action(action):
     toolbar=find('File actions')
     candidates=[]
@@ -184,11 +221,20 @@ def file_action(action):
             pass
     assert len(candidates)==1, f'Expected one file menu button, found {len(candidates)}'
     click_node(candidates[0])
-    record('menu-'+action.lower().replace(' ','-'))
-    click_node(find(action))
+    stem='menu-'+action.lower().replace(' ','-')
+    record(stem)
+    try:
+        item=find(action,timeout=2)
+    except RuntimeError:
+        # Qt's transient menu is visually present but absent from AT-SPI on
+        # the pinned official build (recorded in R4). Click its unique OCR text.
+        click_ocr_phrase(action,E/(stem+'.png'))
+    else:
+        click_node(item)
+    wait_dialog('Export clip' if action=='Export clip' else 'Open clip')
 
 try:
-    for name in ['native-export.xpt','converted.mid','generated.xpt','target-before.mmp','target-after.mmp','target-reopened.mmp','native-gui-result.json','native-oracle-result.json']:
+    for name in ['native-export.xpt','converted.mid','generated.xpt','source-native.mmp','target-before.mmp','target-after.mmp','target-reopened.mmp','native-gui-result.json','native-oracle-result.json']:
         assert not (E/name).exists(), f'Stale evidence exists: {name}'
     time.sleep(7)
     active_project(E/'source-input.mmp',timeout=60)
@@ -200,6 +246,9 @@ try:
     filename(E/'native-export.xpt')
     wait_file('native-export.xpt')
     record('04-exported-source')
+    # Opening/maximizing a clip can mark the source project modified. Save a
+    # fresh native copy so switching projects cannot stop at an unsaved dialog.
+    save_project_as(E/'source-native.mmp')
     # Python core is run separately; source is an actual native GUI output.
     command(sys.executable,'-m','pattern_ferry',str(E/'native-export.xpt'),str(E/'converted.mid'),'--report',str(E/'export-review.json'),'--accept-velocity-scaling')
     command(sys.executable,'-m','pattern_ferry',str(E/'converted.mid'),str(E/'generated.xpt'),'--report',str(E/'import-review.json'),'--accept-velocity-scaling')
